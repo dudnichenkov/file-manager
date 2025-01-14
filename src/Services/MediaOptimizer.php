@@ -9,12 +9,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 class MediaOptimizer implements MediaOptimizerInterface
 {
     protected MediaOptimizerSettingsInterface $settings;
-    protected int $test;
 
-    public function __construct(MediaOptimizerSettingsInterface $settings, int $test)
+    public function __construct(MediaOptimizerSettingsInterface $settings)
     {
         $this->settings = $settings;
-        $this->test = $test;
     }
 
     public function optimize(UploadedFile $mediaFile)
@@ -28,4 +26,5 @@ class MediaOptimizer implements MediaOptimizerInterface
 //            return $image;
 //        }
     }
+
 }

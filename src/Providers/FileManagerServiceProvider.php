@@ -19,9 +19,6 @@ use Dietrichxx\FileManager\Strategies\Interfaces\StorageStrategyResolverInterfac
 use Dietrichxx\FileManager\Strategies\StorageStrategyResolver;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
-//use Intervention\Image\Drivers\Gd\Driver as GdDriver;
-//use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
-//use Intervention\Image\ImageManager;
 
 class FileManagerServiceProvider extends ServiceProvider
 {
@@ -46,20 +43,6 @@ class FileManagerServiceProvider extends ServiceProvider
             $mediaOptimizerSettings = $app->make(MediaOptimizerSettingsInterface::class);
 
             return new FileManagerSettings($mainDirectoryTitle, $validationSettings, $mediaOptimizerSettings);
-        });
-
-        $this->app->singleton(MediaOptimizerInterface::class, function ($app) {
-            $mediaOptimizerSettings = $app->make(MediaOptimizerSettingsInterface::class);
-
-//            $imageDriver = Config::get('filemanager[media_optimizer][driver]');
-//            dd($imageDriver);
-//            if($imageDriver === 'gb'){
-//                $manager = new ImageManager(new GdDriver());
-//            }elseif ($imageDriver === 'imagick'){
-//                $manager = new ImageManager(new ImagickDriver());
-//            }
-
-            return new MediaOptimizer($mediaOptimizerSettings, 5);
         });
 
         $this->app->bind(FileServiceInterface::class, FileService::class);
