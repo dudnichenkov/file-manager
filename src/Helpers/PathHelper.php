@@ -21,6 +21,11 @@ class PathHelper
         return $path . '/' . $title;
     }
 
+    public function combinePathTitleExtension(string $path, string $title, string $extension): string
+    {
+        return $this->combinePathTitle($path, $title) . '.' . $extension;
+    }
+
     public function isDirectoryExists(string $directoryPath): bool
     {
         if(File::isDirectory($directoryPath)) {

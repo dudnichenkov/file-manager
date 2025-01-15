@@ -2,10 +2,11 @@
 
 return [
     'main_directory_title' => 'media',                                  // Имя корневой директории
+    'transliteration_title' => false,                                   // Tранслитерация названий файлов и папок
     'media_optimizer' => [
         'driver' => 'gd',
         'compress_image' => true,
-        'compression_quality' => 85
+        'compression_quality' => 40
     ],
     'validation' => [
         'max_file_size_mb' => 5,                                        // Максимальный размер файла в MB

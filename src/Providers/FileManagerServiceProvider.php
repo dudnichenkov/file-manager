@@ -2,6 +2,8 @@
 
 namespace Dietrichxx\FileManager\Providers;
 
+use Dietrichxx\FileManager\Helpers\Interfaces\TransliteratorInterface;
+use Dietrichxx\FileManager\Helpers\TitleTransliterator;
 use Dietrichxx\FileManager\Models\FileManagerSettings;
 use Dietrichxx\FileManager\Models\Interfaces\FileManagerSettingsInterface;
 use Dietrichxx\FileManager\Models\Interfaces\MediaOptimizerSettingsInterface;
@@ -14,7 +16,9 @@ use Dietrichxx\FileManager\Services\Interfaces\FileManagerInterface;
 use Dietrichxx\FileManager\Services\Interfaces\FileServiceInterface;
 use Dietrichxx\FileManager\Services\Interfaces\MediaOptimizerInterface;
 use Dietrichxx\FileManager\Services\Interfaces\StorageInitializerInterface;
+use Dietrichxx\FileManager\Services\Interfaces\TitleProcessorInterface;
 use Dietrichxx\FileManager\Services\MediaOptimizer;
+use Dietrichxx\FileManager\Services\TitleProcessor;
 use Dietrichxx\FileManager\Strategies\Interfaces\StorageStrategyResolverInterface;
 use Dietrichxx\FileManager\Strategies\StorageStrategyResolver;
 use Illuminate\Support\Facades\Config;
@@ -51,6 +55,14 @@ class FileManagerServiceProvider extends ServiceProvider
             return new MediaOptimizer($mediaOptimizerSettings);
         });
 
+        $this->app->bind(TransliteratorInterface::class, TitleTransliterator::class);
+
+        $this->app->singleton(TitleProcessorInterface::class, function ($app) {
+            $isTransliterationTitle =  Config::get('filemanager.transliteration_title');
+            $transliterator = $app->make(TransliteratorInterface::class);
+
+            return new TitleProcessor($transliterator, $isTransliterationTitle);
+        });
 
         $this->app->bind(FileServiceInterface::class, FileService::class);
         $this->app->bind(StorageStrategyResolverInterface::class, StorageStrategyResolver::class);

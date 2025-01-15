@@ -7,6 +7,7 @@ use Dietrichxx\FileManager\Helpers\PathHelper;
 use Dietrichxx\FileManager\Rules\FileValidation;
 use Dietrichxx\FileManager\Services\Interfaces\FileServiceInterface;
 use Dietrichxx\FileManager\Services\Interfaces\MediaOptimizerInterface;
+use Dietrichxx\FileManager\Services\Interfaces\TitleProcessorInterface;
 use Dietrichxx\FileManager\Services\MediaOptimizer;
 use Dietrichxx\FileManager\Strategies\Interfaces\StorageStrategyInterface;
 use Illuminate\Support\Facades\Storage;
@@ -18,17 +19,20 @@ class FileStorageStrategy implements StorageStrategyInterface
 {
     protected FileServiceInterface $fileService;
     protected PathHelper $pathHelper;
+    protected TitleProcessorInterface $titleProcessor;
     protected FileValidation $fileValidation;
     protected MediaOptimizerInterface $mediaOptimizer;
 
     public function __construct(
         FileServiceInterface $fileService,
         PathHelper $pathHelper,
+        TitleProcessorInterface $titleProcessor,
         FileValidation $fileValidation,
         MediaOptimizer $mediaOptimizer
     ){
         $this->fileService = $fileService;
         $this->pathHelper = $pathHelper;
+        $this->titleProcessor = $titleProcessor;
         $this->fileValidation = $fileValidation;
         $this->mediaOptimizer = $mediaOptimizer;
     }
@@ -42,17 +46,20 @@ class FileStorageStrategy implements StorageStrategyInterface
     public function create(string $path, string|UploadedFile $createdInstance): bool
     {
         if($this->validateFile($createdInstance)){
-            $fileTitle = $createdInstance->getClientOriginalName();
+            $fileTitle = pathinfo($createdInstance->getClientOriginalName(), PATHINFO_FILENAME);
             $fileExtension = $createdInstance->getClientOriginalExtension();
 
-            if($this->fileService->createFile($fileTitle, $path, $fileExtension))
-            {
+            $file = $this->fileService->createFile($fileTitle, $path, $fileExtension);
+            if($file) {
+                $fileTitleWithId = $this->titleProcessor->process($fileTitle)->addUniquePrefix($file->id)->getTitle();
+                $this->fileService->updateFile($file, $fileTitleWithId);
+
                 $file = $this->mediaOptimizer->optimize($createdInstance);
-                $pathWithTitle = $path . '/' . $fileTitle;
-                return Storage::disk('public')->put($pathWithTitle, $file);
+                return Storage::disk('public')->put($this->pathHelper->combinePathTitleExtension($path, $fileTitleWithId, $fileExtension), $file);
             }
             return false;
         }
+        return false;
     }
 
     /**

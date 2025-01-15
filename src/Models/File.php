@@ -20,6 +20,6 @@ class File extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::url("{$this->path}/{$this->title}");
+        return Storage::url("{$this->path}/{$this->title}.{$this->extension}");
     }
 }

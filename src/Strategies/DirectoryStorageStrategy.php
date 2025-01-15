@@ -6,6 +6,7 @@ use Dietrichxx\FileManager\Exceptions\DirectoryAlreadyExistsException;
 use Dietrichxx\FileManager\Exceptions\DirectoryNotFoundException;
 use Dietrichxx\FileManager\Helpers\PathHelper;
 use Dietrichxx\FileManager\Services\Interfaces\FileServiceInterface;
+use Dietrichxx\FileManager\Services\Interfaces\TitleProcessorInterface;
 use Dietrichxx\FileManager\Strategies\Interfaces\StorageStrategyInterface;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -15,11 +16,13 @@ class DirectoryStorageStrategy implements StorageStrategyInterface
 {
     protected FileServiceInterface $fileService;
     protected PathHelper $pathHelper;
+    protected TitleProcessorInterface $titleProcessor;
 
-    public function __construct(FileServiceInterface $fileService, PathHelper $pathHelper)
+    public function __construct(FileServiceInterface $fileService, PathHelper $pathHelper, TitleProcessorInterface $titleProcessor)
     {
         $this->fileService = $fileService;
         $this->pathHelper = $pathHelper;
+        $this->titleProcessor = $titleProcessor;
     }
 
     /**
@@ -30,7 +33,9 @@ class DirectoryStorageStrategy implements StorageStrategyInterface
      */
     public function create(string $path, string|UploadedFile $createdInstance): bool
     {
-        $pathFromStorage = $this->pathHelper->getPathFromStorage($path, $createdInstance);
+        $directoryTitle = $this->titleProcessor->process($createdInstance)->getTitle();
+
+        $pathFromStorage = $this->pathHelper->getPathFromStorage($path, $directoryTitle);
 
         if($this->pathHelper->isDirectoryExists($pathFromStorage)){
             throw new DirectoryAlreadyExistsException($pathFromStorage);

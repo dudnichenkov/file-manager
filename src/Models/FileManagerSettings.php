@@ -9,6 +9,7 @@ use Dietrichxx\FileManager\Models\Interfaces\ValidationSettingsInterface;
 class FileManagerSettings implements FileManagerSettingsInterface
 {
     protected string $mainDirectoryTitle;
+    protected bool $transliterationTitle;
     protected string $mainDirectoryPath;
     protected ValidationSettingsInterface $validationSettings;
     protected MediaOptimizerSettingsInterface $mediaOptimizerSettings;
@@ -27,6 +28,11 @@ class FileManagerSettings implements FileManagerSettingsInterface
         return $this->mainDirectoryTitle;
     }
 
+    public function isTransliterationTitle(): bool
+    {
+        return $this->transliterationTitle;
+    }
+
     public function getMainDirectoryPath(): string
     {
         return $this->mainDirectoryPath;
@@ -35,5 +41,10 @@ class FileManagerSettings implements FileManagerSettingsInterface
     public function getValidationSettings(): ValidationSettingsInterface
     {
         return $this->validationSettings;
+    }
+
+    public function getMediaOptimizerSettings(): MediaOptimizerSettingsInterface
+    {
+        return $this->mediaOptimizerSettings;
     }
 }
