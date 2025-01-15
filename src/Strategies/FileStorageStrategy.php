@@ -19,7 +19,7 @@ class FileStorageStrategy implements StorageStrategyInterface
     protected FileServiceInterface $fileService;
     protected PathHelper $pathHelper;
     protected FileValidation $fileValidation;
-    protected MediaOptimizer $mediaOptimizer;
+    protected MediaOptimizerInterface $mediaOptimizer;
 
     public function __construct(
         FileServiceInterface $fileService,
@@ -42,10 +42,16 @@ class FileStorageStrategy implements StorageStrategyInterface
     public function create(string $path, string|UploadedFile $createdInstance): bool
     {
         if($this->validateFile($createdInstance)){
-//            $this->mediaOptimizer->optimize($createdInstance);
-            dd($this->mediaOptimizer);
-            $this->fileService->createFile($createdInstance->getClientOriginalName(), $path, $createdInstance->getClientOriginalExtension());
-            return $createdInstance->storeAs($path, $createdInstance->getClientOriginalName(), 'public');
+            $fileTitle = $createdInstance->getClientOriginalName();
+            $fileExtension = $createdInstance->getClientOriginalExtension();
+
+            if($this->fileService->createFile($fileTitle, $path, $fileExtension))
+            {
+                $file = $this->mediaOptimizer->optimize($createdInstance);
+                $pathWithTitle = $path . '/' . $fileTitle;
+                return Storage::disk('public')->put($pathWithTitle, $file);
+            }
+            return false;
         }
     }
 

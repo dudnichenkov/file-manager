@@ -45,6 +45,13 @@ class FileManagerServiceProvider extends ServiceProvider
             return new FileManagerSettings($mainDirectoryTitle, $validationSettings, $mediaOptimizerSettings);
         });
 
+        $this->app->singleton(MediaOptimizerInterface::class, function ($app) {
+            $mediaOptimizerSettings = $app->make(MediaOptimizerSettingsInterface::class);
+
+            return new MediaOptimizer($mediaOptimizerSettings);
+        });
+
+
         $this->app->bind(FileServiceInterface::class, FileService::class);
         $this->app->bind(StorageStrategyResolverInterface::class, StorageStrategyResolver::class);
 
