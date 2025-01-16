@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'main_directory_title' => 'media',                                  // Имя корневой директории
+    'main_directory_title' => 'files',                                  // Имя корневой директории
     'transliteration_title' => false,                                   // Tранслитерация названий файлов и папок
     'media_optimizer' => [
         'driver' => 'gd',
