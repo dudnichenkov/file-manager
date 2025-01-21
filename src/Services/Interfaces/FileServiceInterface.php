@@ -18,4 +18,6 @@ interface FileServiceInterface
     public function updatePathFiles(Collection $files, string $path): bool;
 
     public function deleteFile(File $file): bool;
+
+    public function getFileById(int $id): File;
 }

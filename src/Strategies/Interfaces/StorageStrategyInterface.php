@@ -2,13 +2,15 @@
 
 namespace Dietrichxx\FileManager\Strategies\Interfaces;
 
-use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Dietrichxx\FileManager\Data\StorageItemCreateData;
+use Dietrichxx\FileManager\Data\StorageItemDeleteData;
+use Dietrichxx\FileManager\Data\StorageItemUpdateData;
 
 interface StorageStrategyInterface
 {
-    public function create(string $path, string|UploadedFile $createdInstance): bool;
+    public function create(StorageItemCreateData $storageItemData): bool;
 
-    public function update(string $path, string $oldTitle, string $newTitle): bool;
+    public function update(StorageItemUpdateData $storageItemUpdateData): bool;
 
-    public function delete(string $path, string $title): bool;
+    public function delete(StorageItemDeleteData $storageItemDeleteData): bool;
 }

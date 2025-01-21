@@ -2,6 +2,9 @@
 
 namespace Dietrichxx\FileManager\Strategies;
 
+use Dietrichxx\FileManager\Data\StorageItemCreateData;
+use Dietrichxx\FileManager\Data\StorageItemDeleteData;
+use Dietrichxx\FileManager\Data\StorageItemUpdateData;
 use Dietrichxx\FileManager\Exceptions\DirectoryAlreadyExistsException;
 use Dietrichxx\FileManager\Exceptions\DirectoryNotFoundException;
 use Dietrichxx\FileManager\Helpers\PathHelper;
@@ -10,7 +13,6 @@ use Dietrichxx\FileManager\Services\Interfaces\TitleProcessorInterface;
 use Dietrichxx\FileManager\Strategies\Interfaces\StorageStrategyInterface;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class DirectoryStorageStrategy implements StorageStrategyInterface
 {
@@ -26,16 +28,15 @@ class DirectoryStorageStrategy implements StorageStrategyInterface
     }
 
     /**
-     * @param string $path
-     * @param string|UploadedFile $createdInstance
+     * @param StorageItemCreateData $storageItemData
      * @return bool
      * @throws DirectoryAlreadyExistsException
      */
-    public function create(string $path, string|UploadedFile $createdInstance): bool
+    public function create(StorageItemCreateData $storageItemData): bool
     {
-        $directoryTitle = $this->titleProcessor->process($createdInstance)->getTitle();
+        $directoryTitle = $this->titleProcessor->process($storageItemData->directory_title)->getTitle();
 
-        $pathFromStorage = $this->pathHelper->getPathFromStorage($path, $directoryTitle);
+        $pathFromStorage = $this->pathHelper->getPathFromStorage($storageItemData->path, $directoryTitle);
 
         if($this->pathHelper->isDirectoryExists($pathFromStorage)){
             throw new DirectoryAlreadyExistsException($pathFromStorage);
@@ -45,16 +46,14 @@ class DirectoryStorageStrategy implements StorageStrategyInterface
     }
 
     /**
-     * @param string $path
-     * @param string $oldTitle
-     * @param string $newTitle
+     * @param StorageItemUpdateData $storageItemUpdateData
      * @return bool
      * @throws DirectoryNotFoundException
      */
-    public function update(string $path, string $oldTitle, string $newTitle): bool
+    public function update(StorageItemUpdateData $storageItemUpdateData): bool
     {
-        $oldFilePath = $this->pathHelper->combinePathTitle($path, $oldTitle);
-        $newFilePath = $this->pathHelper->combinePathTitle($path, $newTitle);
+        $oldFilePath = $this->pathHelper->combinePathTitle($storageItemUpdateData->path, $storageItemUpdateData->old_directory_title);
+        $newFilePath = $this->pathHelper->combinePathTitle($storageItemUpdateData->path, $storageItemUpdateData->new_title);
 
         if(Storage::disk('public')->exists($oldFilePath)){
             $result = rename(
@@ -73,14 +72,13 @@ class DirectoryStorageStrategy implements StorageStrategyInterface
     }
 
     /**
-     * @param string $path
-     * @param string $title
+     * @param StorageItemDeleteData $storageItemDeleteData
      * @return bool
      * @throws DirectoryNotFoundException
      */
-    public function delete(string $path, string $title): bool
+    public function delete(StorageItemDeleteData $storageItemDeleteData): bool
     {
-        $directoryPath = $this->pathHelper->combinePathTitle($path, $title);
+        $directoryPath = $this->pathHelper->combinePathTitle($storageItemDeleteData->path, $storageItemDeleteData->directory_title);
         $files = $this->fileService->getFilesByPath($directoryPath);
 
         if(Storage::disk('public')->exists($directoryPath)) {

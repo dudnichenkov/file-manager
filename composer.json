@@ -17,6 +17,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^8.1",
-        "intervention/image-laravel": "*"
+        "intervention/image-laravel": "*",
+        "spatie/laravel-data": "*"
     }
 }

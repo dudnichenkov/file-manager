@@ -2,8 +2,12 @@
 
 namespace Dietrichxx\FileManager\Strategies;
 
+use Dietrichxx\FileManager\Data\StorageItemCreateData;
+use Dietrichxx\FileManager\Data\StorageItemDeleteData;
+use Dietrichxx\FileManager\Data\StorageItemUpdateData;
 use Dietrichxx\FileManager\Exceptions\FileNotFoundException;
 use Dietrichxx\FileManager\Helpers\PathHelper;
+use Dietrichxx\FileManager\Models\File;
 use Dietrichxx\FileManager\Rules\FileValidation;
 use Dietrichxx\FileManager\Services\Interfaces\FileServiceInterface;
 use Dietrichxx\FileManager\Services\Interfaces\MediaOptimizerInterface;
@@ -38,28 +42,71 @@ class FileStorageStrategy implements StorageStrategyInterface
     }
 
     /**
-     * @param string $path
-     * @param string|UploadedFile $createdInstance
+     * @param StorageItemCreateData $storageItemData
      * @return bool
      * @throws ValidationException
      */
-    public function create(string $path, string|UploadedFile $createdInstance): bool
+    public function create(StorageItemCreateData $storageItemData): bool
     {
-        if($this->validateFile($createdInstance)){
-            $fileTitle = pathinfo($createdInstance->getClientOriginalName(), PATHINFO_FILENAME);
-            $fileExtension = $createdInstance->getClientOriginalExtension();
+        $uploadedFile = $storageItemData->file;
 
-            $file = $this->fileService->createFile($fileTitle, $path, $fileExtension);
-            if($file) {
-                $fileTitleWithId = $this->titleProcessor->process($fileTitle)->addUniquePrefix($file->id)->getTitle();
-                $this->fileService->updateFile($file, $fileTitleWithId);
-
-                $file = $this->mediaOptimizer->optimize($createdInstance);
-                return Storage::disk('public')->put($this->pathHelper->combinePathTitleExtension($path, $fileTitleWithId, $fileExtension), $file);
-            }
+        if (!$this->validateFile($uploadedFile)) {
             return false;
         }
-        return false;
+
+        $file = $this->createFileEntry($uploadedFile, $storageItemData->path);
+        if (!$file) {
+            return false;
+        }
+
+        $fileTitleWithId = $this->generateUniqueTitle($uploadedFile, $file->id);
+        $this->fileService->updateFile($file, $fileTitleWithId);
+
+        return $this->saveOptimizedFile($uploadedFile, $storageItemData->path, $fileTitleWithId);
+    }
+
+    /**
+     * @param UploadedFile $uploadedFile
+     * @param string $path
+     * @return File
+     */
+    protected function createFileEntry(UploadedFile $uploadedFile, string $path): File
+    {
+        $fileTitle = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $fileExtension = $uploadedFile->getClientOriginalExtension();
+
+        return $this->fileService->createFile($fileTitle, $path, $fileExtension);
+    }
+
+    /**
+     * @param UploadedFile $uploadedFile
+     * @param int $fileId
+     * @return string
+     */
+    protected function generateUniqueTitle(UploadedFile $uploadedFile, int $fileId): string
+    {
+        $fileTitle = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+
+        return $this->titleProcessor->process($fileTitle)
+            ->addUniquePrefix($fileId)
+            ->getTitle();
+    }
+
+    /**
+     * @param UploadedFile $uploadedFile
+     * @param string $path
+     * @param string $fileTitleWithId
+     * @return bool
+     */
+    protected function saveOptimizedFile(UploadedFile $uploadedFile, string $path, string $fileTitleWithId): bool
+    {
+        $fileExtension = $uploadedFile->getClientOriginalExtension();
+        $optimizedFile = $this->mediaOptimizer->optimize($uploadedFile);
+
+        return Storage::disk('public')->put(
+            $this->pathHelper->combinePathTitleExtension($path, $fileTitleWithId, $fileExtension),
+            $optimizedFile
+        );
     }
 
     /**
@@ -84,37 +131,33 @@ class FileStorageStrategy implements StorageStrategyInterface
     }
 
     /**
-     * @param string $path
-     * @param string $oldTitle
-     * @param string $newTitle
+     * @param StorageItemUpdateData $storageItemUpdateData
      * @return bool
      * @throws FileNotFoundException
      */
-    public function update(string $path, string $oldTitle, string $newTitle): bool
+    public function update(StorageItemUpdateData $storageItemUpdateData): bool
     {
-        $oldFilePath = $this->pathHelper->combinePathTitle($path, $oldTitle);
-        $newFilePath = $this->pathHelper->combinePathTitle($path, $newTitle);
+        $file = $this->fileService->getFileByID($storageItemUpdateData->file_id);
+        $newFilePath = $this->pathHelper->combinePathTitleExtension($file->path, $storageItemUpdateData->new_title, $file->extension);
 
-        if(Storage::disk('public')->exists($oldFilePath)){
-            if (Storage::disk('public')->move($oldFilePath, $newFilePath)) {
-                $file = $this->fileService->getFileByPathByTitle($path, $oldTitle);
-                return $this->fileService->updateFile($file, $newTitle);
+        if(Storage::disk('public')->exists($file->path)){
+            if (Storage::disk('public')->move($file->path, $newFilePath)) {
+                return $this->fileService->updateFile($file, $storageItemUpdateData->new_title);
             }
             return false;
         }
-        throw new FileNotFoundException($oldFilePath);
+        throw new FileNotFoundException(($file->path));
     }
 
     /**
-     * @param string $path
-     * @param string $title
+     * @param StorageItemDeleteData $storageItemDeleteData
      * @return bool
      * @throws FileNotFoundException
      */
-    public function delete(string $path, string $title): bool
+    public function delete(StorageItemDeleteData $storageItemDeleteData): bool
     {
-        $file = $this->fileService->getFileByPathByTitle($path, $title);
-        $filePath = $this->pathHelper->combinePathTitle($path, $title);
+        $file = $this->fileService->getFileById($storageItemDeleteData->file_id);
+        $filePath = $this->pathHelper->combinePathTitleExtension($file->path, $file->title, $file->extension);
 
         if(Storage::disk('public')->exists($filePath)) {
             if (Storage::disk('public')->delete($filePath)) {

@@ -2,10 +2,12 @@
 
 namespace Dietrichxx\FileManager\Services;
 
+use Dietrichxx\FileManager\Data\StorageItemCreateData;
+use Dietrichxx\FileManager\Data\StorageItemDeleteData;
+use Dietrichxx\FileManager\Data\StorageItemUpdateData;
 use Dietrichxx\FileManager\Helpers\PathHelper;
 use Dietrichxx\FileManager\Models\DirectoryStructure;
 use Dietrichxx\FileManager\Models\Interfaces\FileManagerSettingsInterface;
-use Dietrichxx\FileManager\Rules\FileValidation;
 use Dietrichxx\FileManager\Services\Interfaces\FileManagerInterface;
 use Dietrichxx\FileManager\Services\Interfaces\FileServiceInterface;
 use Dietrichxx\FileManager\Services\Interfaces\StorageInitializerInterface;
@@ -15,7 +17,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class FileManager implements FileManagerInterface, StorageInitializerInterface
 {
@@ -61,35 +62,37 @@ class FileManager implements FileManagerInterface, StorageInitializerInterface
         }
     }
 
-    public function create(string $path, string|UploadedFile $createdInstance, string $type): bool
-    {
-        $storageHandler = $this->storageHandlerResolver->resolve($type);
-        return $storageHandler->create($path, $createdInstance);
-    }
-
     /**
-     * @param string $path
-     * @param string $oldTitle
-     * @param string $newTitle
+     * @param StorageItemCreateData $storageItemData
      * @param string $type
      * @return bool
      */
-    public function update(string $path, string $oldTitle, string $newTitle, string $type): bool
+    public function create(StorageItemCreateData $storageItemData, string $type): bool
     {
         $storageHandler = $this->storageHandlerResolver->resolve($type);
-        return $storageHandler->update($path, $oldTitle, $newTitle);
+        return $storageHandler->create($storageItemData);
     }
 
     /**
-     * @param string $path
-     * @param string $title
+     * @param StorageItemUpdateData $storageItemUpdateData
      * @param string $type
      * @return bool
      */
-    public function delete(string $path, string $title, string $type): bool
+    public function update(StorageItemUpdateData $storageItemUpdateData, string $type): bool
     {
         $storageHandler = $this->storageHandlerResolver->resolve($type);
-        return $storageHandler->delete($path, $title);
+        return $storageHandler->update($storageItemUpdateData);
+    }
+
+    /**
+     * @param StorageItemDeleteData $storageItemDeleteData
+     * @param string $type
+     * @return bool
+     */
+    public function delete(StorageItemDeleteData $storageItemDeleteData, string $type): bool
+    {
+        $storageHandler = $this->storageHandlerResolver->resolve($type);
+        return $storageHandler->delete($storageItemDeleteData);
     }
 
     /**
