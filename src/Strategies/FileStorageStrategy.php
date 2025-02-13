@@ -138,10 +138,12 @@ class FileStorageStrategy implements StorageStrategyInterface
     public function update(StorageItemUpdateData $storageItemUpdateData): bool
     {
         $file = $this->fileService->getFileByID($storageItemUpdateData->file_id);
+
+        $oldPath = $this->pathHelper->combinePathTitleExtension($file->path, $file->title, $file->extension);
         $newFilePath = $this->pathHelper->combinePathTitleExtension($file->path, $storageItemUpdateData->new_title, $file->extension);
 
         if(Storage::disk('public')->exists($file->path)){
-            if (Storage::disk('public')->move($file->path, $newFilePath)) {
+            if (Storage::disk('public')->move($oldPath, $newFilePath)) {
                 return $this->fileService->updateFile($file, $storageItemUpdateData->new_title);
             }
             return false;

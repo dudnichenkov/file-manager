@@ -69,6 +69,10 @@ class FileService implements FileServiceInterface
      */
     public function updatePathFiles(Collection $files, string $path): bool
     {
+        if ($files->isEmpty()) {
+            return true;
+        }
+
         $ids = $files->pluck('id')->toArray();
         return File::whereIn('id', $ids)->update(['path' => $path]);
     }
